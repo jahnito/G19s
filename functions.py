@@ -78,6 +78,21 @@ def show_time_image(color=(0, 51, 102),
     return img
 
 
+def show_clock_image(color=(0, 51, 102),
+                          font='/usr/share/fonts/truetype/liberation/'
+                          'LiberationMono-Regular.ttf') -> Image.Image:
+    '''
+    Creating a display image - time
+    '''
+    sec = datetime.datetime.now().second
+    img = Image.new('RGB', (320, 240), color)
+    draw = ImageDraw.Draw(img)
+    draw.circle((160, 120), 100, outline='red')
+    draw.line((160, 120, sec + sec, sec + sec), fill='red', width=2)
+    draw.circle((160, 120), 10, fill=color, outline=color)
+    return img
+
+
 def show_file_image(path_to_img: str) -> Image.Image:
     '''
     Creating a display image from image file
@@ -105,6 +120,14 @@ def applet_time(display: Display):
         if APPLET != 1:
             break
 
+def applet_clock(display: Display):
+    while True:
+        img = show_clock_image()
+        data = Display.convert_image_to_frame(img)
+        display.write_frame(data)
+        time.sleep(1)
+        if APPLET != 2:
+            break
 
 def applet_photo(display: Display):
     while True:
