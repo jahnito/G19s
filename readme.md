@@ -14,3 +14,9 @@ psutil 6.0.0
 At the moment, a class for working with the keyboard display has been implemented in the file (display_g19s.py)
 Functions have been prepared that generate images with time (show_time_image.png) and the system monitor (show_hw_monitor_image.png)
 
+
+![show_time_image](show_time_image.png)
+
+
+![show_hw_monitor_image](show_hw_monitor_image.png)
+
