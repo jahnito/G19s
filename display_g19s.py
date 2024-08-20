@@ -2,7 +2,7 @@ import usb.core
 import usb.util
 import random
 import time
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 
 
 class Display():
@@ -101,6 +101,6 @@ class Display():
         valueH = (rBits << 3) | (gBits >> 3)
         valueL = ((gBits & 7) << 5) | bBits
         return valueL << 8 | valueH
-    
+
     def reset(self):
         self._dev_display.reset()

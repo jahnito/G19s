@@ -4,9 +4,11 @@ from psutil import cpu_percent, getloadavg, cpu_count, virtual_memory
 from psutil import sensors_temperatures, pids, boot_time
 import datetime
 import time
+import math
 import os
 
 APPLET = 0
+
 
 def show_hw_monitor_image(color=(0, 0, 0),
                           font='/usr/share/fonts/truetype/liberation/'
@@ -78,18 +80,81 @@ def show_time_image(color=(0, 51, 102),
     return img
 
 
-def show_clock_image(color=(0, 51, 102),
+def create_min_sec_line(sec: int, width: int, point: tuple[int, int]):
+    x, y = point
+    if sec == 0:
+        return (x, y - width)
+    if sec == 30:
+        return (x, y + width)
+    if sec == 15:
+        return (x + width, y)
+    if sec == 45:
+        return (x - width, y)
+    if 0 < sec < 30:
+        _y = width * math.cos(math.radians(sec * 6))
+        _x = (width ** 2 - _y ** 2) ** 0.5 
+        return (x + _x, y - _y)
+    if 30 < sec < 60:
+        _y = width * math.cos(math.radians(sec * -6))
+        _x = (width ** 2 - _y ** 2) ** 0.5 
+        return (x - _x, y - _y)
+
+
+def create_hours_line(hours: int, minutes: int, width: int, point: tuple[int, int]):
+    x, y = point
+    degrees = (hours % 12 * 60 + minutes) // 2
+    # print(degrees)
+    if degrees == 0:
+        return (x, y - width)
+    if degrees == 90:
+        return (x + width, y)
+    if degrees == 180:
+        return (x, y + width)
+    if degrees == 270:
+        return (x - width, y)
+    if 0 < degrees < 90:
+        degrees = degrees
+        _y = width * math.cos(math.radians(degrees))
+        _x = (width ** 2 - _y ** 2) ** 0.5
+        return (x + _x, y - _y)
+    if 90 < degrees < 180:
+        degrees = degrees % 90
+        _x = width * math.cos(math.radians(degrees))
+        _y = (width ** 2 - _x ** 2) ** 0.5
+        return (x + _x, y + _y)
+    if 180 < degrees < 270:
+        degrees = degrees % 180
+        _y = width * math.cos(math.radians(degrees))
+        _x = (width ** 2 - _y ** 2) ** 0.5
+        return (x - _x, y + _y)
+    if 270 < degrees < 360:
+        degrees = degrees % 270
+        _x = width * math.cos(math.radians(degrees))
+        _y = (width ** 2 - _x ** 2) ** 0.5
+        return (x - _x, y - _y)
+
+
+def show_clock_image(color=(0, 0, 0),
                           font='/usr/share/fonts/truetype/liberation/'
                           'LiberationMono-Regular.ttf') -> Image.Image:
     '''
     Creating a display image - time
     '''
+    center = (160, 120)
     sec = datetime.datetime.now().second
+    min = datetime.datetime.now().minute
+    hour = datetime.datetime.now().hour
     img = Image.new('RGB', (320, 240), color)
     draw = ImageDraw.Draw(img)
-    draw.circle((160, 120), 100, outline='red')
-    draw.line((160, 120, sec + sec, sec + sec), fill='red', width=2)
-    draw.circle((160, 120), 10, fill=color, outline=color)
+    draw.circle(center, 110, outline='red')
+    coordinates_sec = center + create_min_sec_line(sec, 100, center)
+    coordinates_min = center + create_min_sec_line(min, 80, center)
+    coordinates_hour = center + create_hours_line(hour, min, 55, center)
+    draw.line(coordinates_sec, fill='red', width=1)
+    draw.line(coordinates_min, fill='red', width=4)
+    draw.line(coordinates_hour, fill='red', width=6)
+    draw.circle(center, 10, fill=color, outline=color)
+    # img.save('clock_'+str(sec)+'.png', 'png')
     return img
 
 
@@ -120,6 +185,7 @@ def applet_time(display: Display):
         if APPLET != 1:
             break
 
+
 def applet_clock(display: Display):
     while True:
         img = show_clock_image()
@@ -128,6 +194,7 @@ def applet_clock(display: Display):
         time.sleep(1)
         if APPLET != 2:
             break
+
 
 def applet_photo(display: Display):
     while True:
