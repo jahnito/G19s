@@ -113,13 +113,15 @@ def create_hours_line(hours: int, minutes: int, width: int, point: tuple[int, in
         return (x - width, y)
 
     if 0 < degrees < 180:
-        ky = -1
-    elif 180 < degrees < 360:
-        ky = 1
-    if 90 < degrees < 270:
-        kx = -1
-    elif 270 < degrees < 360 or 0 < degrees < 90:
+        # ky = -1
         kx = 1
+    elif 180 < degrees < 360:
+        # ky = 1
+        kx = -1
+    if 90 < degrees < 270:
+        ky = 1
+    elif 270 < degrees < 360:
+        ky = -1
 
     if 0 < degrees < 90 or 180 < degrees < 270:
         degrees %= 90
@@ -155,18 +157,18 @@ def create_litle_risks(center: tuple[int, int], line: int):
     return result
 
 
-def show_clock_image(color=(0, 0, 0),
+def show_clock_image(size, color=(0, 0, 0),
                           font='/usr/share/fonts/truetype/liberation/'
                           'LiberationMono-Regular.ttf') -> Image.Image:
     '''
     Creating a display image - time
     '''
-    R = 116
+    R = size
     risk = R * 0.9
     sec_line = risk
     min_line = sec_line * 0.8
     hour_line = sec_line * 0.55
-    color_clock = 'red'
+    color_clock = 'yellow'
     center = (160, 120)
     sec = datetime.datetime.now().second
     min = datetime.datetime.now().minute
@@ -176,7 +178,7 @@ def show_clock_image(color=(0, 0, 0),
     draw.circle(center, R, outline=color_clock)
     for i in create_litle_risks(center, risk):
         draw.line(i, fill=color_clock, width=1)
-    draw.circle(center, risk * 0.9, fill=color, outline=color)
+    draw.circle(center, risk * 0.91, fill=color, outline=color)
     coordinates_sec = center + create_min_sec_line(sec, sec_line, center)
     coordinates_min = center + create_min_sec_line(min, min_line, center)
     coordinates_hour = center + create_hours_line(hour, min, hour_line, center)
@@ -186,7 +188,7 @@ def show_clock_image(color=(0, 0, 0),
     draw.line(coordinates_sec, fill=color_clock, width=1)
     draw.line(coordinates_min, fill=color_clock, width=4)
     draw.line(coordinates_hour, fill=color_clock, width=6)
-    draw.circle(center, risk * 0.1, fill=color, outline=color)
+    draw.circle(center, risk * 0.05, fill=color_clock, outline=color)
     return img
 
 
@@ -220,10 +222,10 @@ def applet_time(display: Display):
 
 def applet_clock(display: Display):
     while True:
-        img = show_clock_image()
+        img = show_clock_image(105)
         data = Display.convert_image_to_frame(img)
         display.write_frame(data)
-        time.sleep(1)
+        time.sleep(0.5)
         if APPLET != 2:
             break
 
