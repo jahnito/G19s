@@ -103,7 +103,6 @@ def create_min_sec_line(sec: int, width: int, point: tuple[int, int]):
 def create_hours_line(hours: int, minutes: int, width: int, point: tuple[int, int]):
     x, y = point
     degrees = (hours % 12 * 60 + minutes) // 2
-    # print(degrees)
     if degrees == 0:
         return (x, y - width)
     if degrees == 90:
@@ -112,26 +111,48 @@ def create_hours_line(hours: int, minutes: int, width: int, point: tuple[int, in
         return (x, y + width)
     if degrees == 270:
         return (x - width, y)
-    if 0 < degrees < 90:
-        degrees = degrees
+
+    if 0 < degrees < 180:
+        ky = -1
+    elif 180 < degrees < 360:
+        ky = 1
+    if 90 < degrees < 270:
+        kx = -1
+    elif 270 < degrees < 360 or 0 < degrees < 90:
+        kx = 1
+
+    if 0 < degrees < 90 or 180 < degrees < 270:
+        degrees %= 90
         _y = width * math.cos(math.radians(degrees))
         _x = (width ** 2 - _y ** 2) ** 0.5
-        return (x + _x, y - _y)
-    if 90 < degrees < 180:
-        degrees = degrees % 90
+        return (x + _x * kx, y + _y * ky)
+    if 90 < degrees < 180 or 270 < degrees < 360:
+        degrees %= 90
         _x = width * math.cos(math.radians(degrees))
         _y = (width ** 2 - _x ** 2) ** 0.5
-        return (x + _x, y + _y)
-    if 180 < degrees < 270:
-        degrees = degrees % 180
-        _y = width * math.cos(math.radians(degrees))
-        _x = (width ** 2 - _y ** 2) ** 0.5
-        return (x - _x, y + _y)
-    if 270 < degrees < 360:
-        degrees = degrees % 270
-        _x = width * math.cos(math.radians(degrees))
-        _y = (width ** 2 - _x ** 2) ** 0.5
-        return (x - _x, y - _y)
+        return (x + _x * kx, y + _y * ky)
+
+
+def create_litle_risks(center: tuple[int, int], line: int):
+    result = []
+    x, y = center
+    for i in (30, 60, -60, -30):
+        if i > 0:
+            ky = 1
+        elif i < 0:
+            ky = -1
+        _y = line * math.cos(math.radians(i))
+        _x = (line ** 2 - _y ** 2) ** 0.5
+        result.append((x, y, x + _x, y - _y * ky))
+    for i in (-30, -60, 60, 30):
+        if i > 0:
+            ky = 1
+        elif i < 0:
+            ky = -1
+        _y = line * math.cos(math.radians(i))
+        _x = (line ** 2 - _y ** 2) ** 0.5
+        result.append((x, y, x - _x, y - _y * ky))
+    return result
 
 
 def show_clock_image(color=(0, 0, 0),
@@ -140,21 +161,32 @@ def show_clock_image(color=(0, 0, 0),
     '''
     Creating a display image - time
     '''
+    R = 116
+    risk = R * 0.9
+    sec_line = risk
+    min_line = sec_line * 0.8
+    hour_line = sec_line * 0.55
+    color_clock = 'red'
     center = (160, 120)
     sec = datetime.datetime.now().second
     min = datetime.datetime.now().minute
     hour = datetime.datetime.now().hour
     img = Image.new('RGB', (320, 240), color)
     draw = ImageDraw.Draw(img)
-    draw.circle(center, 110, outline='red')
-    coordinates_sec = center + create_min_sec_line(sec, 100, center)
-    coordinates_min = center + create_min_sec_line(min, 80, center)
-    coordinates_hour = center + create_hours_line(hour, min, 55, center)
-    draw.line(coordinates_sec, fill='red', width=1)
-    draw.line(coordinates_min, fill='red', width=4)
-    draw.line(coordinates_hour, fill='red', width=6)
-    draw.circle(center, 10, fill=color, outline=color)
-    # img.save('clock_'+str(sec)+'.png', 'png')
+    draw.circle(center, R, outline=color_clock)
+    for i in create_litle_risks(center, risk):
+        draw.line(i, fill=color_clock, width=1)
+    draw.circle(center, risk * 0.9, fill=color, outline=color)
+    coordinates_sec = center + create_min_sec_line(sec, sec_line, center)
+    coordinates_min = center + create_min_sec_line(min, min_line, center)
+    coordinates_hour = center + create_hours_line(hour, min, hour_line, center)
+    draw.line((center[0], center[1] + risk, center[0], center[1] - risk), fill=color_clock, width=2)
+    draw.line((center[0] - risk, center[1], center[0] + risk, center[1]), fill=color_clock, width=2)
+    draw.circle(center, risk * 0.8, fill=color, outline=color)
+    draw.line(coordinates_sec, fill=color_clock, width=1)
+    draw.line(coordinates_min, fill=color_clock, width=4)
+    draw.line(coordinates_hour, fill=color_clock, width=6)
+    draw.circle(center, risk * 0.1, fill=color, outline=color)
     return img
 
 
