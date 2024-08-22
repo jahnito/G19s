@@ -1,13 +1,17 @@
-from display_g19s import Display
+from Classes import Display
 from PIL import Image, ImageDraw, ImageFont
 from psutil import cpu_percent, getloadavg, cpu_count, virtual_memory
 from psutil import sensors_temperatures, pids, boot_time
 import datetime
 import time
 import math
+import urllib.request
+import urllib.error
+import json
+from io import BytesIO
 import os
 
-APPLET = 0
+APPLET = 4
 
 
 def show_hw_monitor_image(color=(0, 0, 0),
@@ -157,7 +161,7 @@ def create_litle_risks(center: tuple[int, int], line: int):
     return result
 
 
-def show_clock_image(size, color=(0, 0, 0),
+def show_clock_image(size=110, center = (160, 120), color_clock='red', color=(0, 0, 0),
                           font='/usr/share/fonts/truetype/liberation/'
                           'LiberationMono-Regular.ttf') -> Image.Image:
     '''
@@ -168,8 +172,6 @@ def show_clock_image(size, color=(0, 0, 0),
     sec_line = risk
     min_line = sec_line * 0.8
     hour_line = sec_line * 0.55
-    color_clock = 'yellow'
-    center = (160, 120)
     sec = datetime.datetime.now().second
     min = datetime.datetime.now().minute
     hour = datetime.datetime.now().hour
@@ -192,6 +194,35 @@ def show_clock_image(size, color=(0, 0, 0),
     return img
 
 
+def get_random_cat():
+    with open('tokens/thecatsapi') as f:
+        token = f.read().strip()
+    url = f'https://api.thecatapi.com/v1/images/search?api_key={token}'
+    try:
+        with urllib.request.urlopen(url) as u:
+            data = json.loads(u.read().decode('utf-8'))
+        return data[0]['url']
+    except urllib.error.HTTPError as e:
+        print(e)
+
+
+def show_cats_api():
+    random_cat = get_random_cat()
+    while random_cat[-3:] != 'jpg':
+        print(random_cat[-3:])
+        random_cat = get_random_cat()
+    try:
+        print(random_cat)
+        request = urllib.request.Request(random_cat, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(request) as c:
+            data = c.read()
+            img = Image.open(BytesIO(data))
+        return img
+    except urllib.error.HTTPError as e:
+        print(e)
+
+
+
 def show_file_image(path_to_img: str) -> Image.Image:
     '''
     Creating a display image from image file
@@ -200,13 +231,15 @@ def show_file_image(path_to_img: str) -> Image.Image:
     return img
 
 
+# Applets
+
 def applet_hw(display: Display):
     while True:
         img = show_hw_monitor_image()
         data = Display.convert_image_to_frame(img)
         display.write_frame(data)
         time.sleep(5)
-        if APPLET != 0:
+        if display.applet != 0:
             break
 
 
@@ -216,17 +249,17 @@ def applet_time(display: Display):
         data = Display.convert_image_to_frame(img)
         display.write_frame(data)
         time.sleep(1)
-        if APPLET != 1:
+        if display.applet != 1:
             break
 
 
 def applet_clock(display: Display):
     while True:
-        img = show_clock_image(105)
+        img = show_clock_image()
         data = Display.convert_image_to_frame(img)
         display.write_frame(data)
-        time.sleep(0.5)
-        if APPLET != 2:
+        time.sleep(1)
+        if display.applet != 2:
             break
 
 
@@ -236,5 +269,14 @@ def applet_photo(display: Display):
         data = Display.convert_image_to_frame(img)
         display.write_frame(data)
         time.sleep(1)
-        if APPLET != 1:
+        if display.applet != 3:
+            break
+
+def applet_hw(display: Display):
+    while True:
+        img = show_cats_api()
+        data = Display.convert_image_to_frame(img)
+        display.write_frame(data)
+        time.sleep(5)
+        if display.applet != 4:
             break

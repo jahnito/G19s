@@ -7,19 +7,20 @@ from PIL import Image
 
 class Display():
     def __init__(self):
+        self.applet = 0
         self._dev_display = self.create_dev_keyboard()
-        self._intf0_display = self.create_intf_display()
-        self._ep_out_display = self.create_enfpoint_display_out()
+        self._intf0 = self.create_intf_display()
+        self._ep_out_display = self.create_endpoint_display_out()
 
     @staticmethod
     def create_dev_keyboard():
         dev0: usb.core.Device = usb.core.find(idVendor=0x046d, idProduct=0xc229)
-        # if dev0.is_kernel_driver_active(0):
-        #     try:
-        #         dev0.detach_kernel_driver(0)
-        #         dev0.reset()
-        #     except usb.core.USBError as e:
-        #         print(e)
+        if dev0.is_kernel_driver_active(0):
+            try:
+                dev0.detach_kernel_driver(0)
+                dev0.reset()
+            except usb.core.USBError as e:
+                print(e)
         if dev0 is None:
             print('G19s LCD not found on USB bus')
             return None
@@ -33,10 +34,16 @@ class Display():
         cfg = dev.get_active_configuration()
         return cfg[(0,0)]
 
-    def create_enfpoint_display_out(self) -> usb.core.Endpoint:
-        ep: usb.core.Endpoint = usb.util.find_descriptor(self._intf0_display, custom_match= lambda e: \
+    def create_endpoint_display_out(self) -> usb.core.Endpoint:
+        ep: usb.core.Endpoint = usb.util.find_descriptor(self._intf0, custom_match= lambda e: \
                                 usb.util.endpoint_direction(e.bEndpointAddress) == \
-                                usb.util.ENDPOINT_OUT)        
+                                usb.util.ENDPOINT_OUT)
+        return ep
+
+    def create_endpoint_keyboard_in(self) -> usb.core.Endpoint:
+        ep: usb.core.Endpoint = usb.util.find_descriptor(self._intf0, custom_match= lambda e: \
+                                usb.util.endpoint_direction(e.bEndpointAddress) == \
+                                usb.util.ENDPOINT_OUT)
         return ep
 
     def write_frame(self, data:list=None):
@@ -82,8 +89,6 @@ class Display():
                 val = Display.rgb_to_uint16(r, g, b)
                 data.append(val >> 8)
                 data.append(val & 0xff)
-                # print(val, val & 0xff)
-                # input()
         return data
 
     @staticmethod
