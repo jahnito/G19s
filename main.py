@@ -1,29 +1,42 @@
-from Classes import Display
-from Functions import APPLET
-from Functions import applet_hw, applet_time, applet_clock
+from Classes import Display, Menu
+from Functions import applet_hw, applet_time, applet_clock, applet_cats
+from Functions import get_keystroke
 import time
 import threading
 
 
+active_applets = {
+                  0: applet_hw,
+                  1: applet_time,
+                  2: applet_clock,
+                  3: applet_cats,
+                  }
+
 def run_applet():
     while True:
-        if display.applet == 0:
-            applet_hw(display)
-        elif display.applet == 1:
-            applet_time(display)
-        elif display.applet == 2:
-            applet_clock(display)
+        try:
+            active_applets[display.applet](display)
+        except ValueError:
+            print('Unknown error')
 
 
-def slideshow():
+def run_poll_keyboard():
     while True:
-        for i in range(3):
+        get_keystroke(menu, applets=active_applets)
+
+
+def run_slideshow():
+    while True:
+        for i in active_applets.keys():
             display.applet = i
             time.sleep(10)
 
 if __name__ == '__main__':
     display = Display()
+    menu = Menu(display)
     thr1 = threading.Thread(target=run_applet)
-    # thr2 = threading.Thread(target=slideshow)
+    thr2 = threading.Thread(target=run_poll_keyboard)
+    # thr3 = threading.Thread(target=run_slideshow)
     thr1.start()
-    # thr2.start()
+    thr2.start()
+    # thr3.start()

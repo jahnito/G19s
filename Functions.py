@@ -1,4 +1,4 @@
-from Classes import Display
+from Classes import Display, Menu
 from PIL import Image, ImageDraw, ImageFont
 from psutil import cpu_percent, getloadavg, cpu_count, virtual_memory
 from psutil import sensors_temperatures, pids, boot_time
@@ -9,9 +9,7 @@ import urllib.request
 import urllib.error
 import json
 from io import BytesIO
-import os
-
-APPLET = 4
+import usb
 
 
 def show_hw_monitor_image(color=(0, 0, 0),
@@ -117,7 +115,7 @@ def create_hours_line(hours: int, minutes: int, width: int, point: tuple[int, in
         return (x - width, y)
 
     if 0 < degrees < 180:
-        # ky = -1
+        ky = -1
         kx = 1
     elif 180 < degrees < 360:
         # ky = 1
@@ -204,15 +202,15 @@ def get_random_cat():
         return data[0]['url']
     except urllib.error.HTTPError as e:
         print(e)
+        return 'bla-bla-bla'
 
 
 def show_cats_api():
     random_cat = get_random_cat()
+    
     while random_cat[-3:] != 'jpg':
-        print(random_cat[-3:])
         random_cat = get_random_cat()
     try:
-        print(random_cat)
         request = urllib.request.Request(random_cat, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(request) as c:
             data = c.read()
@@ -220,7 +218,6 @@ def show_cats_api():
         return img
     except urllib.error.HTTPError as e:
         print(e)
-
 
 
 def show_file_image(path_to_img: str) -> Image.Image:
@@ -231,6 +228,23 @@ def show_file_image(path_to_img: str) -> Image.Image:
     return img
 
 
+def get_keystroke(menu: Menu, applets: dict):
+    '''
+    Reads the value of the pressed button
+    and sends it to the Menu class for processing
+    '''
+    button_id = None
+    num_applets = len(applets)
+    try:
+        button_id = menu.display._ep_in_keyboard.read(2, 10000)
+        # back_state = menu.display._ep_in_keyboard.read(2, 100)
+    except usb.core.USBTimeoutError as e:
+        return False
+    if button_id:
+        print(button_id)
+        menu.set_default_action(button_id[0], num_applets)
+        return True
+
 # Applets
 
 def applet_hw(display: Display):
@@ -238,7 +252,7 @@ def applet_hw(display: Display):
         img = show_hw_monitor_image()
         data = Display.convert_image_to_frame(img)
         display.write_frame(data)
-        time.sleep(5)
+        time.sleep(3)
         if display.applet != 0:
             break
 
@@ -272,7 +286,8 @@ def applet_photo(display: Display):
         if display.applet != 3:
             break
 
-def applet_hw(display: Display):
+
+def applet_cats(display: Display):
     while True:
         img = show_cats_api()
         data = Display.convert_image_to_frame(img)

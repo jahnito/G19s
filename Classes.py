@@ -11,21 +11,22 @@ class Display():
         self._dev_display = self.create_dev_keyboard()
         self._intf0 = self.create_intf_display()
         self._ep_out_display = self.create_endpoint_display_out()
+        self._ep_in_keyboard = self.create_endpoint_keyboard_in()
 
     @staticmethod
-    def create_dev_keyboard():
-        dev0: usb.core.Device = usb.core.find(idVendor=0x046d, idProduct=0xc229)
-        if dev0.is_kernel_driver_active(0):
+    def create_dev_keyboard() -> usb.core.Device:
+        dev = usb.core.find(idVendor=0x046d, idProduct=0xc229)
+        if dev.is_kernel_driver_active(0):
             try:
-                dev0.detach_kernel_driver(0)
-                dev0.reset()
+                dev.detach_kernel_driver(0)
+                dev.reset()
             except usb.core.USBError as e:
                 print(e)
-        if dev0 is None:
+        if dev is None:
             print('G19s LCD not found on USB bus')
             return None
         else:
-            return dev0
+            return dev
 
     def create_intf_display(self) -> usb.Interface:
         dev = self.create_dev_keyboard()
@@ -43,7 +44,7 @@ class Display():
     def create_endpoint_keyboard_in(self) -> usb.core.Endpoint:
         ep: usb.core.Endpoint = usb.util.find_descriptor(self._intf0, custom_match= lambda e: \
                                 usb.util.endpoint_direction(e.bEndpointAddress) == \
-                                usb.util.ENDPOINT_OUT)
+                                usb.util.ENDPOINT_IN)
         return ep
 
     def write_frame(self, data:list=None):
@@ -63,7 +64,6 @@ class Display():
             for i in range(153600):
                 frame.append(int(x,base=16))
         self._ep_out_display.write(frame, 1000)
-
 
     @staticmethod
     def convert_image_to_frame(filename):
@@ -109,3 +109,23 @@ class Display():
 
     def reset(self):
         self._dev_display.reset()
+
+
+class Menu():
+    def __init__(self, display: Display):
+        self.enabled = 0
+        self.display = display
+
+    def get_int_from_key(self, id: int):
+        pass
+
+    def set_default_action(self, id: int, num_applets: int):
+        if not self.enabled:
+            # pass
+            if id == 16:
+                if self.display.applet < num_applets - 1:
+                    self.display.applet += 1
+            elif id == 32:
+                if self.display.applet > 0:
+                    self.display.applet -= 1
+            print(self.display.applet)
