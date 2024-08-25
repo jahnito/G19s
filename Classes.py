@@ -12,10 +12,11 @@ class Display():
         self._intf0 = self.create_intf_display()
         self._ep_out_display = self.create_endpoint_display_out()
         self._ep_in_keyboard = self.create_endpoint_keyboard_in()
+        self.last_image = None
 
     @staticmethod
     def create_dev_keyboard() -> usb.core.Device:
-        dev = usb.core.find(idVendor=0x046d, idProduct=0xc229)
+        dev: usb.core.Device = usb.core.find(idVendor=0x046d, idProduct=0xc229)
         if dev.is_kernel_driver_active(0):
             try:
                 dev.detach_kernel_driver(0)
@@ -24,7 +25,7 @@ class Display():
                 print(e)
         if dev is None:
             print('G19s LCD not found on USB bus')
-            return None
+            raise usb.core.USBError
         else:
             return dev
 
@@ -51,8 +52,9 @@ class Display():
         '''
         Write frame to display
         '''
+        self.last_image = data
         frame = [0x10, 0x0F, 0x00, 0x58, 0x02, 0x00, 0x00, 0x00,
-                        0x00, 0x00, 0x00, 0x3F, 0x01, 0xEF, 0x00, 0x0F]
+                 0x00, 0x00, 0x00, 0x3F, 0x01, 0xEF, 0x00, 0x0F]
         for i in range(16, 256):
             frame.append(i)
         for i in range(256):
@@ -62,7 +64,7 @@ class Display():
         else:
             x = hex(random.randint(1, 255))
             for i in range(153600):
-                frame.append(int(x,base=16))
+                frame.append(int(x, base=16))
         self._ep_out_display.write(frame, 1000)
 
     @staticmethod
@@ -83,6 +85,11 @@ class Display():
             img = img.resize((320, 240), Image.BICUBIC)
             access = img.load()
         data = []
+        try:
+            r, g, b = access[0, 0]
+        except TypeError:
+            img = Image.open('error.jpg')
+            access = img.load()
         for x in range(320):
             for y in range(240):
                 r, g, b = access[x, y]
