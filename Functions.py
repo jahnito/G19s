@@ -1,4 +1,4 @@
-from Classes import Display, Menu
+from Classes import Display, Menu, Weather
 from PIL import Image, ImageDraw, ImageFont
 from psutil import cpu_percent, getloadavg, cpu_count, virtual_memory
 from psutil import sensors_temperatures, pids, boot_time
@@ -54,8 +54,9 @@ SYS\n\
 
 
 def show_time_image(color=(0, 51, 102),
-                          font='/usr/share/fonts/truetype/liberation/'
-                          'LiberationMono-Regular.ttf') -> Image.Image:
+                    font='/usr/share/fonts/truetype/liberation/'
+                    'LiberationMono-Regular.ttf',
+                    weather: Weather = None) -> Image.Image:
     '''
     Creating a display image - time
     '''
@@ -69,16 +70,25 @@ def show_time_image(color=(0, 51, 102),
                }
     text_color = (249,185,88)
     img = Image.new('RGB', (320, 240), color)
-    fnt_time = ImageFont.truetype(font, 48)
+    fnt_time = ImageFont.truetype(font, 46)
     fnt_date = ImageFont.truetype(font, 16)
     draw = ImageDraw.Draw(img)
     x, y = 10, 10
     text_time = datetime.datetime.now().strftime("%H:%M:%S")
     text_date = datetime.datetime.now().strftime("%d-%m-%Y")
     text_weekday = datetime.datetime.now().strftime("%A")
-    draw.text((x + 30, y + 80), text_time, font=fnt_time, fill=text_color, align='right')
-    draw.text((x + 30, y + 160), text_date, font=fnt_date, fill=text_color)
-    draw.text((x + 30, y + 135), weekday[text_weekday], font=fnt_date, fill=text_color)
+    draw.text((x + 30, y + 90), text_time, font=fnt_time, fill=text_color, align='right')
+    draw.text((x + 30, y + 170), text_date, font=fnt_date, fill=text_color)
+    draw.text((x + 30, y + 145), weekday[text_weekday], font=fnt_date, fill=text_color)
+    if weather.cur_weather:
+        fnt_weather = ImageFont.truetype(font, 14)
+        text_weather = f'{weather.cur_weather["weather"][0]["description"].capitalize()}'
+        text_temp = f'Температура: {weather.cur_weather["main"]["temp"]}°'
+        text_wind = f'      Ветер: {weather.cur_weather["wind"]["speed"]} м/с {weather.cur_weather["wind"]["deg"]}°'
+        draw.text((x + 100, y + 10), text_weather, font=fnt_weather, fill=text_color)
+        draw.text((x + 100, y + 30), text_temp, font=fnt_weather, fill=text_color)
+        draw.text((x + 100, y + 50), text_wind, font=fnt_weather, fill=text_color)
+    # img.save('show_time_image_with_weather.png', 'png')
     return img
 
 
@@ -202,7 +212,7 @@ def get_random_cat():
         return data[0]['url']
     except urllib.error.HTTPError as e:
         print(e)
-        return 'bla-bla-bla'
+        return 'error_load_image'
 
 
 def show_cats_api():
@@ -257,9 +267,12 @@ def applet_hw(display: Display):
             break
 
 
-def applet_time(display: Display):
+def applet_time(display: Display, weather: Weather = None):
     while True:
-        img = show_time_image()
+        if weather:
+            img = show_time_image(weather=weather)
+        else:
+            img = show_time_image()
         data = Display.convert_image_to_frame(img)
         display.write_frame(data)
         time.sleep(1)

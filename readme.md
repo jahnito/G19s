@@ -5,9 +5,13 @@ A set of scripts for working with the Logitech G19s keyboard
 
 ## What you need to use this
 
-Python 3.11
-pyusb 1.2.1
-psutil 6.0.0
+| Component  | Version |
+|---|---|
+| Python | 3.11|
+| pyusb | 1.2.1 |
+| psutil | 6.0.0 |
+
+pip requirements.txt included
 
 ## What is here
 
@@ -18,16 +22,29 @@ Time (show_time_image.png)
 
 ![show_time_image](show_time_image.png)
 
+Time and Weather (show_time_image_with_weather.png)
+
+![show_time_image_with_weather](show_time_image_with_weather.png)
+
 System monitor (show_hw_monitor_image.png)
 
 ![show_hw_monitor_image](show_hw_monitor_image.png)
 
 Analog clock (clock.gif)
 
-![show_hw_monitor_image](clock.gif){:height="320px" width="240px"}
+![show_hw_monitor_image](clock.gif)
 
 A Menu class has been implemented for working with display keys.
 At the moment, it is possible to switch applets by pressing the right and left arrows.
+
+## API
+
+For the thecatsapi and weather APIs, it is necessary to obtain tokens, they must be registered in the following files:
+
+./tokens/thecatsapi
+./tokens/openweathermap
+
+## Display Buttons
 
 Display button press identifiers:
 

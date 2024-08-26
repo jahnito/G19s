@@ -1,7 +1,8 @@
 import usb.core
 import usb.util
 import random
-import time
+import urllib.request, urllib.error, json
+import datetime, time
 from PIL import Image
 
 
@@ -136,3 +137,45 @@ class Menu():
                 if self.display.applet > 0:
                     self.display.applet -= 1
             print(self.display.applet)
+
+
+class Weather():
+    def __init__(self, lat: int | float, lon: int | float,
+                 interval: int = 15, lang: str = 'ru'):
+        self.interval = interval
+        self.lat = lat
+        self.lon = lon
+        self.lang = lang
+        self.cur_weather = None
+        # self.cur_weather = self.get_weather(lat, lon, lang)
+        self.prev_weather = None
+        if not self.cur_weather:
+            self.nextpoll = datetime.datetime.now() + datetime.timedelta(seconds=10)
+        else:
+            self.nextpoll = self.set_nextpoll()
+
+    def poller(self):
+        while True:
+            if self.nextpoll <= datetime.datetime.now():
+                self.prev_weather = self.cur_weather
+                self.cur_weather = self.get_weather(self.lat, self.lon, self.lang)
+                self.nextpoll = datetime.datetime.now() + datetime.timedelta(minutes=self.interval)
+            time.sleep(5)
+
+    def set_nextpoll(self):
+        self.nextpoll = datetime.datetime.now() + datetime.timedelta(minutes=self.interval)
+
+    @staticmethod
+    def get_weather(lat: int | float, lon: int | float, lang: str) -> dict | str:
+        with open('tokens/openweathermap') as f:
+            token = f.read().strip()
+        url = f'https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&lang={lang}&units=metric&appid={token}'
+        try:
+            request = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+            with urllib.request.urlopen(request, timeout=3) as u:
+                data = json.loads(u.read().decode('utf-8'))
+            return data
+        except urllib.error.HTTPError as e:
+            print(e)
+            data = None
+            return data
