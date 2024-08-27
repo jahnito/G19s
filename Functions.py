@@ -62,12 +62,13 @@ def show_time_image(color=(0, 51, 102),
     '''
     weekday = {'Sunday': 'Воскресенье',
                'Monday': 'Понедельник',
-               'Tuesday': 'Ыторник',
-               'Wednesday': 'среда',
-               'Thursday': 'четверг',
-               'Friday': 'пятница',
-               'Saturday': 'суббота',
+               'Tuesday': 'Вторник',
+               'Wednesday': 'Среда',
+               'Thursday': 'Четверг',
+               'Friday': 'Пятница',
+               'Saturday': 'Суббота',
                }
+
     text_color = (249,185,88)
     img = Image.new('RGB', (320, 240), color)
     fnt_time = ImageFont.truetype(font, 46)
@@ -81,10 +82,19 @@ def show_time_image(color=(0, 51, 102),
     draw.text((x + 30, y + 170), text_date, font=fnt_date, fill=text_color)
     draw.text((x + 30, y + 145), weekday[text_weekday], font=fnt_date, fill=text_color)
     if weather.cur_weather:
+        def find_direction(degrees):
+            wind = {
+                (0, 5): 'Ю', (6, 84): 'ЮЗ', (85, 95): 'З',
+                (96, 174): 'CЗ', (175, 185): 'C', (186, 264): 'СВ',
+                (265, 275): 'В', (276, 354): 'ЮВ', (355, 360): 'Ю'
+            }
+            for ra, val in wind.items():
+                if ra[0] <= degrees <= ra[1]:
+                    return val
         fnt_weather = ImageFont.truetype(font, 14)
         text_weather = f'{weather.cur_weather["weather"][0]["description"].capitalize()}'
         text_temp = f'Температура: {weather.cur_weather["main"]["temp"]}°'
-        text_wind = f'      Ветер: {weather.cur_weather["wind"]["speed"]} м/с {weather.cur_weather["wind"]["deg"]}°'
+        text_wind = f'Ветер: {weather.cur_weather["wind"]["speed"]} м/с ({find_direction(weather.cur_weather["wind"]["deg"])})'
         draw.text((x + 100, y + 10), text_weather, font=fnt_weather, fill=text_color)
         draw.text((x + 100, y + 30), text_temp, font=fnt_weather, fill=text_color)
         draw.text((x + 100, y + 50), text_wind, font=fnt_weather, fill=text_color)

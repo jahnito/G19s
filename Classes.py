@@ -147,8 +147,8 @@ class Weather():
         self.lon = lon
         self.lang = lang
         self.cur_weather = None
-        # self.cur_weather = self.get_weather(lat, lon, lang)
         self.prev_weather = None
+        self.error_get_count = 0
         if not self.cur_weather:
             self.nextpoll = datetime.datetime.now() + datetime.timedelta(seconds=10)
         else:
@@ -158,24 +158,32 @@ class Weather():
         while True:
             if self.nextpoll <= datetime.datetime.now():
                 self.prev_weather = self.cur_weather
-                self.cur_weather = self.get_weather(self.lat, self.lon, self.lang)
-                self.nextpoll = datetime.datetime.now() + datetime.timedelta(minutes=self.interval)
+                if new_weather := self.get_weather(self.lat, self.lon, self.lang):
+                    self.cur_weather = new_weather
+                    self.nextpoll = datetime.datetime.now() + datetime.timedelta(minutes=self.interval)
+                    self.error_get_count = 0
+                elif self.error_get_count >= 5:
+                    self.cur_weather = self.prev_weather
+                    self.nextpoll = datetime.datetime.now() + datetime.timedelta(minutes=self.interval)
+                else:
+                    self.error_get_count += 1
+                    self.cur_weather = self.prev_weather
+                    self.nextpoll = datetime.datetime.now() + datetime.timedelta(seconds=10)
             time.sleep(5)
 
     def set_nextpoll(self):
         self.nextpoll = datetime.datetime.now() + datetime.timedelta(minutes=self.interval)
 
     @staticmethod
-    def get_weather(lat: int | float, lon: int | float, lang: str) -> dict | str:
+    def get_weather(lat: int | float, lon: int | float, lang: str) -> dict | None:
         with open('tokens/openweathermap') as f:
             token = f.read().strip()
         url = f'https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&lang={lang}&units=metric&appid={token}'
         try:
-            request = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+            request = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
             with urllib.request.urlopen(request, timeout=3) as u:
                 data = json.loads(u.read().decode('utf-8'))
             return data
-        except urllib.error.HTTPError as e:
-            print(e)
-            data = None
-            return data
+        except (urllib.error.URLError, ConnectionResetError) as e:
+            print(e, datetime.datetime.now().strftime('%H:%M %d-%m-%Y'))
+            return None

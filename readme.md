@@ -10,6 +10,7 @@ A set of scripts for working with the Logitech G19s keyboard
 | Python | 3.11|
 | pyusb | 1.2.1 |
 | psutil | 6.0.0 |
+| pillow | 10.4.0 |
 
 pip requirements.txt included
 
