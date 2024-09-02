@@ -4,6 +4,7 @@ import random
 import urllib.request, urllib.error, json
 import datetime, time
 from PIL import Image
+import psutil
 
 
 class Display():
@@ -11,8 +12,12 @@ class Display():
         self.applet = 0
         self._dev_display = self.create_dev_keyboard()
         self._intf0 = self.create_intf_display()
+        self._intf1 = self.create_intf_backlight()
         self._ep_out_display = self.create_endpoint_display_out()
         self._ep_in_keyboard = self.create_endpoint_keyboard_in()
+        self._ep_in_gkeys = self.create_endpoint_gkeys()
+        self.backlight = None
+
         self.last_image = None
 
     @staticmethod
@@ -21,6 +26,12 @@ class Display():
         if dev.is_kernel_driver_active(0):
             try:
                 dev.detach_kernel_driver(0)
+                dev.reset()
+            except usb.core.USBError as e:
+                print(e)
+        if dev.is_kernel_driver_active(1):
+            try:
+                dev.detach_kernel_driver(1)
                 dev.reset()
             except usb.core.USBError as e:
                 print(e)
@@ -37,6 +48,13 @@ class Display():
         cfg = dev.get_active_configuration()
         return cfg[(0,0)]
 
+    def create_intf_backlight(self) -> usb.Interface:
+        dev = self.create_dev_keyboard()
+        if not dev:
+            raise usb.core.USBError('G19s LCD not found on USB')
+        cfg = dev.get_active_configuration()
+        return cfg[(1,0)]
+
     def create_endpoint_display_out(self) -> usb.core.Endpoint:
         ep: usb.core.Endpoint = usb.util.find_descriptor(self._intf0, custom_match= lambda e: \
                                 usb.util.endpoint_direction(e.bEndpointAddress) == \
@@ -45,6 +63,12 @@ class Display():
 
     def create_endpoint_keyboard_in(self) -> usb.core.Endpoint:
         ep: usb.core.Endpoint = usb.util.find_descriptor(self._intf0, custom_match= lambda e: \
+                                usb.util.endpoint_direction(e.bEndpointAddress) == \
+                                usb.util.ENDPOINT_IN)
+        return ep
+
+    def create_endpoint_gkeys(self) -> usb.core.Endpoint:
+        ep: usb.core.Endpoint = usb.util.find_descriptor(self._intf1, custom_match= lambda e: \
                                 usb.util.endpoint_direction(e.bEndpointAddress) == \
                                 usb.util.ENDPOINT_IN)
         return ep
@@ -67,6 +91,44 @@ class Display():
             for i in range(153600):
                 frame.append(int(x, base=16))
         self._ep_out_display.write(frame, 1000)
+
+    def set_backlight(self, r, g, b, rndm=False):
+        rtype = usb.TYPE_CLASS | usb.RECIP_INTERFACE
+        if rndm:
+            r, g, b = random.randint(0,255), random.randint(0,255), random.randint(0,255)
+        colorData = [7, r, g, b]
+        self.backlight = [r, g, b]
+        self._dev_display.ctrl_transfer(rtype, 0x09, 0x307, 0x01, colorData, 1000)
+
+    def save_backlight(self, r, g, b):
+        rtype = usb.TYPE_CLASS | usb.RECIP_INTERFACE
+        colorData = [7, r, g, b]
+        self._dev_display.ctrl_transfer(rtype, 0x09, 0x307, 0x01, colorData, 1000)
+
+    def get_menu_keys(self):
+        button_id = None
+        try:
+            # button_id = self._ep_in_keyboard.read(2, 10000)
+            button_id = self._dev_display.read(0x81, 2, timeout=10000)
+        except usb.core.USBTimeoutError as e:
+            # print(e)
+            return None
+        if button_id and button_id[0] > 0:
+            return button_id
+        else:
+            return None
+
+    def get_m_g_keys(self):
+        button_id = None
+        try:
+            button_id = self._dev_display.read(0x83, 11, timeout=10000)
+        except usb.core.USBTimeoutError as e:
+            # print(e)
+            return None
+        if button_id and (button_id[-2] > 0 or button_id[-3] > 0):
+            if len(button_id) > 4:
+                button_id = button_id[-4:]
+            return button_id
 
     @staticmethod
     def convert_image_to_frame(filename):
@@ -122,21 +184,20 @@ class Display():
 class Menu():
     def __init__(self, display: Display):
         self.enabled = 0
+        self.timeout_menu: int = 60 # seconds
+        self.last_key_press = None
         self.display = display
 
-    def get_int_from_key(self, id: int):
-        pass
 
     def set_default_action(self, id: int, num_applets: int):
         if not self.enabled:
-            # pass
             if id == 16:
                 if self.display.applet < num_applets - 1:
                     self.display.applet += 1
             elif id == 32:
                 if self.display.applet > 0:
                     self.display.applet -= 1
-            print(self.display.applet)
+            print("Current applet", self.display.applet)
 
 
 class Weather():
@@ -149,6 +210,7 @@ class Weather():
         self.cur_weather = None
         self.prev_weather = None
         self.error_get_count = 0
+        self.update = None
         if not self.cur_weather:
             self.nextpoll = datetime.datetime.now() + datetime.timedelta(seconds=10)
         else:
@@ -161,14 +223,16 @@ class Weather():
                 if new_weather := self.get_weather(self.lat, self.lon, self.lang):
                     self.cur_weather = new_weather
                     self.nextpoll = datetime.datetime.now() + datetime.timedelta(minutes=self.interval)
+                    self.update = datetime.datetime.now()
                     self.error_get_count = 0
                 elif self.error_get_count >= 5:
                     self.cur_weather = self.prev_weather
-                    self.nextpoll = datetime.datetime.now() + datetime.timedelta(minutes=self.interval)
+                    self.nextpoll = datetime.datetime.now() + datetime.timedelta(minutes=1)
+                    self.error_get_count = 0
                 else:
                     self.error_get_count += 1
                     self.cur_weather = self.prev_weather
-                    self.nextpoll = datetime.datetime.now() + datetime.timedelta(seconds=10)
+                    self.nextpoll = datetime.datetime.now() + datetime.timedelta(seconds=5)
             time.sleep(5)
 
     def set_nextpoll(self):
@@ -187,3 +251,42 @@ class Weather():
         except (urllib.error.URLError, ConnectionResetError) as e:
             print(e, datetime.datetime.now().strftime('%H:%M %d-%m-%Y'))
             return None
+
+
+class HardwareMonitor():
+    '''
+    fs: determines what types of file systems on disks to monitor
+    fs_excluded: determines what monitoring mountpoints should be excluded
+    '''
+    fs = ('ext3', 'ext4', 'fat', 'exfat', 'fat32', 'ntfs')
+    fs_excluded = ('boot', 'var')
+
+    def __init__(self, interval: int = 5):
+        self.cpu_count = psutil.cpu_count()
+        self.cpu_percent = psutil.cpu_percent(0.0)
+        self.cpu_freq = psutil.cpu_freq()
+        self.cpu_average = psutil.getloadavg()
+        self.virt_mem = psutil.virtual_memory()
+        self.temp_sensors = psutil.sensors_temperatures()
+        self.disks = tuple(i for i in psutil.disk_partitions() \
+                           if i.fstype in self.fs and \
+                           i.mountpoint.split('/')[-1] not in self.fs_excluded)
+        self.disks_usage = {disk.mountpoint: psutil.disk_usage(disk.mountpoint) for disk in self.disks}
+
+        self.sys_started = psutil.boot_time()
+        self.interval = datetime.timedelta(seconds=interval)
+        self.updated = datetime.datetime.now()
+
+    def update_values(self):
+        while True:
+            time.sleep(5)
+            self.cpu_count = psutil.cpu_count()
+            self.cpu_percent = psutil.cpu_percent(0.0)
+            self.cpu_freq = psutil.cpu_freq()
+            self.cpu_average = psutil.getloadavg()
+            self.virt_mem = psutil.virtual_memory()
+            self.temp_sensors = psutil.sensors_temperatures()
+            self.disks = tuple(i for i in psutil.disk_partitions() \
+                            if i.fstype in self.fs and \
+                            i.mountpoint.split('/')[-1] not in self.fs_excluded)
+            self.disks_usage = {disk.mountpoint: psutil.disk_usage(disk.mountpoint) for disk in self.disks}

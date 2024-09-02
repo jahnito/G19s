@@ -61,3 +61,56 @@ Display button press identifiers:
 | 128 | up arrow |
 
 To run the current implementation of the project, you need to run main.py with root rights.
+
+## M keys and G keys
+
+| Button | buffer |
+|---|---|
+|G1 ||
+| button pressed | [2, 1, 0, 64], [3, 0, 0, 0, 0, 0, 0, 2, 1, 0, 64] |
+| button released | [3, 58, 0, 0, 0, 0, 0, 2, 0, 0, 64] |
+| G2 ||
+| button pressed | [2, 2, 0, 64], [3, 0, 0, 0, 0, 0, 0, 2, 2, 0, 64] |
+| button released | [3, 59, 0, 0, 0, 0, 0, 2, 0, 0, 64] |
+| G3 ||
+| button pressed | [2, 4, 0, 64], [3, 0, 0, 0, 0, 0, 0, 2, 4, 0, 64] |
+| button released | [3, 60, 0, 0, 0, 0, 0, 2, 0, 0, 64] |
+| G4 ||
+| button pressed | [2, 8, 0, 64], [3, 0, 0, 0, 0, 0, 0, 2, 8, 0, 64] |
+| button released | [3, 61, 0, 0, 0, 0, 0, 2, 0, 0, 64] |
+| G5 ||
+| button pressed | [2, 16, 0, 64], [3, 0, 0, 0, 0, 0, 0, 2, 16, 0, 64] |
+| button released | [3, 62, 0, 0, 0, 0, 0, 2, 0, 0, 64] |
+| G6 ||
+| button pressed | [2, 32, 0, 64], [3, 0, 0, 0, 0, 0, 0, 2, 32, 0, 64] |
+| button released | [3, 63, 0, 0, 0, 0, 0, 2, 0, 0, 64] |
+| G7 ||
+| button pressed | [2, 64, 0, 64], [3, 0, 0, 0, 0, 0, 0, 2, 64, 0, 64] |
+| button released | [3, 64, 0, 0, 0, 0, 0, 2, 0, 0, 64] |
+| G8 ||
+| button pressed | [2, 128, 0, 64], [3, 0, 0, 0, 0, 0, 0, 2, 128, 0, 64] |
+| button released | [3, 65, 0, 0, 0, 0, 0, 2, 0, 0, 64] |
+| G9 ||
+| button pressed | [2, 0, 1, 64], [3, 0, 0, 0, 0, 0, 0, 2, 0, 1, 64] |
+| button released | [3, 66, 0, 0, 0, 0, 0, 2, 0, 0, 64] |
+| G10 ||
+| button pressed | [2, 0, 2, 64], [3, 0, 0, 0, 0, 0, 0, 2, 0, 2, 64] |
+| button released | [3, 67, 0, 0, 0, 0, 0, 2, 0, 0, 64] |
+| G11 ||
+| button pressed | [2, 0, 4, 64], [3, 0, 0, 0, 0, 0, 0, 2, 0, 4, 64] |
+| button released | [3, 68, 0, 0, 0, 0, 0, 2, 0, 0, 64] |
+| G12 ||
+| button pressed | [2, 0, 8, 64], [3, 0, 0, 0, 0, 0, 0, 2, 0, 8, 64] |
+| button released | [3, 69, 0, 0, 0, 0, 0, 2, 0, 0, 64] |
+| M1 ||
+| button pressed | [2, 0, 16, 64] |
+| button released | [2, 0, 0, 64] |
+| M2 ||
+| button pressed | [2, 0, 32, 64] |
+| button released | [2, 0, 0, 64] |
+| M3 ||
+| button pressed | [2, 0, 64, 64] |
+| button released | [2, 0, 0, 64] |
+| MR ||
+| button pressed | [2, 0, 128, 64]|
+| button released | [2, 0, 0, 64]|

@@ -1,4 +1,4 @@
-from Classes import Display, Menu, Weather
+from Classes import Display, Menu, Weather, HardwareMonitor
 from PIL import Image, ImageDraw, ImageFont
 from psutil import cpu_percent, getloadavg, cpu_count, virtual_memory
 from psutil import sensors_temperatures, pids, boot_time
@@ -53,10 +53,11 @@ SYS\n\
     return img
 
 
-def show_time_image(color=(0, 51, 102),
+def show_time_image(color=(255,255,255),
                     font='/usr/share/fonts/truetype/liberation/'
                     'LiberationMono-Regular.ttf',
-                    weather: Weather = None) -> Image.Image:
+                    weather: Weather = None,
+                    hardware: HardwareMonitor = None) -> Image.Image:
     '''
     Creating a display image - time
     '''
@@ -69,10 +70,12 @@ def show_time_image(color=(0, 51, 102),
                'Saturday': 'Суббота',
                }
 
-    text_color = (249,185,88)
+    text_color = (0,0,0) # (249,185,88)
     img = Image.new('RGB', (320, 240), color)
     fnt_time = ImageFont.truetype(font, 46)
     fnt_date = ImageFont.truetype(font, 16)
+    fnt_hw = ImageFont.truetype(font, 12)
+    fnt_disk = ImageFont.truetype(font, 6)
     draw = ImageDraw.Draw(img)
     x, y = 10, 10
     text_time = datetime.datetime.now().strftime("%H:%M:%S")
@@ -81,6 +84,44 @@ def show_time_image(color=(0, 51, 102),
     draw.text((x + 30, y + 90), text_time, font=fnt_time, fill=text_color, align='right')
     draw.text((x + 30, y + 170), text_date, font=fnt_date, fill=text_color)
     draw.text((x + 30, y + 145), weekday[text_weekday], font=fnt_date, fill=text_color)
+    # show HW
+    x_offset = 170
+    y_offset = 160
+    width_line = 8
+    if hardware:
+        # CPU
+        cpuperc = hardware.cpu_percent
+        draw.text((x + x_offset - 26, y - 5 + y_offset), 'CPU', font=fnt_hw, fill=text_color)
+        draw.text((x + x_offset + 105, y - 5 + y_offset), str(int(cpuperc)) + '%', font=fnt_hw, fill=text_color)
+        draw.line((x + x_offset, y + y_offset - width_line/2, x + x_offset + 100, y + y_offset - width_line/2), fill=text_color, width=1)
+        draw.line((x + x_offset, y + y_offset, x + x_offset + int(cpuperc), y + y_offset), fill=text_color, width=width_line)
+        draw.line((x + x_offset, y + y_offset + width_line/2, x + x_offset + 100, y + y_offset + width_line/2), fill=text_color, width=1)
+        draw.line((x + x_offset + 100, y + y_offset - width_line/2, x + x_offset + 100, y + y_offset + width_line/2), fill=text_color, width=1)
+        # RAM
+        x_offset = 170
+        y_offset = 180
+        width_line = 8
+        vm = hardware.virt_mem
+        draw.text((x + x_offset - 26, y - 5 + y_offset), 'RAM', font=fnt_hw, fill=text_color)
+        draw.text((x + x_offset + 105, y - 5 + y_offset), str(int(vm.used/1000000000)) + 'Gb', font=fnt_hw, fill=text_color)
+        draw.line((x + x_offset, y + y_offset - width_line/2, x + x_offset + 100, y + y_offset - width_line/2), fill=text_color, width=1)
+        draw.line((x + x_offset, y + y_offset, x + x_offset + int(vm.percent), y + y_offset), fill=text_color, width=width_line)
+        draw.line((x + x_offset, y + y_offset + width_line/2, x + x_offset + 100, y + y_offset + width_line/2), fill=text_color, width=1)
+        draw.line((x + x_offset + 100, y + y_offset - width_line/2, x + x_offset + 100, y + y_offset + width_line/2), fill=text_color, width=1)
+        disk_count = len(hardware.disks)
+        x_offset = int(320/disk_count)
+        x_disk, y_disk = 0 - x_offset, 210
+        draw.line((x_disk, y_disk, 320, y_disk), fill=text_color)
+        draw.line((319, y_disk, 319, 240), fill=text_color)
+        for disk in hardware.disks:
+            x_disk += x_offset
+            label = disk.mountpoint.split('/')
+            if label[-1] == '':
+                label = '/'
+            draw.line((x_disk, y_disk, x_disk, y_disk + 30), fill=text_color)
+            draw.text((x_disk + 3, y_disk), str(label[-1]), fill=text_color)
+            draw.text((x_disk + 8, y_disk + 18), str(hardware.disks_usage[disk.mountpoint].percent) + "%", fill=text_color)
+    # show Weather
     if weather.cur_weather:
         def find_direction(degrees):
             wind = {
@@ -92,13 +133,15 @@ def show_time_image(color=(0, 51, 102),
                 if ra[0] <= degrees <= ra[1]:
                     return val
         fnt_weather = ImageFont.truetype(font, 14)
+        fnt_update = ImageFont.truetype(font, 10)
         text_weather = f'{weather.cur_weather["weather"][0]["description"].capitalize()}'
-        text_temp = f'Температура: {weather.cur_weather["main"]["temp"]}°'
+        text_temp = f'Температура: {weather.cur_weather["main"]["temp"]}°C'
         text_wind = f'Ветер: {weather.cur_weather["wind"]["speed"]} м/с ({find_direction(weather.cur_weather["wind"]["deg"])})'
-        draw.text((x + 100, y + 10), text_weather, font=fnt_weather, fill=text_color)
-        draw.text((x + 100, y + 30), text_temp, font=fnt_weather, fill=text_color)
-        draw.text((x + 100, y + 50), text_wind, font=fnt_weather, fill=text_color)
-    # img.save('show_time_image_with_weather.png', 'png')
+        text_update = f'updated: {weather.update.strftime("%H:%M")}'
+        draw.text((x + 100, y + 7), text_weather, font=fnt_weather, fill=text_color)
+        draw.text((x + 100, y + 27), text_temp, font=fnt_weather, fill=text_color)
+        draw.text((x + 100, y + 47), text_wind, font=fnt_weather, fill=text_color)
+        draw.text((x + 180, y + 68), text_update, font=fnt_update, fill=text_color)
     return img
 
 
@@ -265,56 +308,69 @@ def get_keystroke(menu: Menu, applets: dict):
         menu.set_default_action(button_id[0], num_applets)
         return True
 
+def get_gkeys_mkeys(display: Display):
+    # '''
+    # '''
+    res = display._ep_in_gkeys.read(1, 1000)
+    # rtype = usb.TYPE_CLASS | usb.RECIP_INTERFACE
+    # dataBuff = [0x10, 0x0]
+    # res = display._dev_display.ctrl_transfer(rtype, 0x09, 0x305, 0x01, dataBuff, 1000)
+    return res
+    # display._dev_display.i
+
+
+
 # Applets
 
-def applet_hw(display: Display):
-    while True:
-        img = show_hw_monitor_image()
-        data = Display.convert_image_to_frame(img)
-        display.write_frame(data)
-        time.sleep(3)
-        if display.applet != 0:
-            break
 
-
-def applet_time(display: Display, weather: Weather = None):
+def applet_time(display: Display, active_aplets, weather: Weather = None, hardware: HardwareMonitor = None):
     while True:
         if weather:
-            img = show_time_image(weather=weather)
+            img = show_time_image(weather=weather, hardware=hardware)
         else:
             img = show_time_image()
         data = Display.convert_image_to_frame(img)
         display.write_frame(data)
         time.sleep(1)
-        if display.applet != 1:
+        if active_aplets[display.applet] != applet_time:
             break
 
 
-def applet_clock(display: Display):
+def applet_hw(display: Display, active_aplets):
+    while True:
+        img = show_hw_monitor_image()
+        data = Display.convert_image_to_frame(img)
+        display.write_frame(data)
+        time.sleep(3)
+        if active_aplets[display.applet] != applet_hw:
+            break
+
+
+def applet_clock(display: Display, active_aplets):
     while True:
         img = show_clock_image()
         data = Display.convert_image_to_frame(img)
         display.write_frame(data)
         time.sleep(1)
-        if display.applet != 2:
+        if active_aplets[display.applet] !=  applet_clock:
             break
 
 
-def applet_photo(display: Display):
+def applet_photo(display: Display, active_aplets):
     while True:
         img = show_time_image()
         data = Display.convert_image_to_frame(img)
         display.write_frame(data)
         time.sleep(1)
-        if display.applet != 3:
+        if active_aplets[display.applet] !=  applet_time:
             break
 
 
-def applet_cats(display: Display):
+def applet_cats(display: Display, active_aplets):
     while True:
         img = show_cats_api()
         data = Display.convert_image_to_frame(img)
         display.write_frame(data)
         time.sleep(5)
-        if display.applet != 4:
+        if active_aplets[display.applet] !=  applet_cats:
             break
