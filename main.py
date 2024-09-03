@@ -1,7 +1,6 @@
 from Classes import Display, Menu, Weather, HardwareMonitor
 from Functions import applet_hw, applet_time, applet_clock, applet_cats
-from Functions import get_keystroke
-import time
+from Functions import backlight
 import threading
 
 
@@ -18,24 +17,25 @@ def run_applet():
         try:
             if display.applet == 0:
                 active_applets[display.applet](display, active_applets, weather, hardware)
-            # elif display.applet == 1:
-            #     active_applets[display.applet](display, active_applets)
             else:
                 active_applets[display.applet](display, active_applets)
         except ValueError:
             print('Unknown error')
 
 
-def run_poll_keyboard():
-    while True:
-        get_keystroke(menu, applets=active_applets)
+def read_keys():
+    display.poll_keys()
 
 
-def run_slideshow():
-    while True:
-        for i in active_applets.keys():
-            display.applet = i
-            time.sleep(10)
+def read_menu():
+    menu.keys_action(len(active_applets))
+
+
+# def run_slideshow():
+#     while True:
+#         for i in active_applets.keys():
+#             display.applet = i
+#             time.sleep(10)
 
 
 if __name__ == '__main__':
@@ -44,11 +44,13 @@ if __name__ == '__main__':
     weather = Weather(56.311684, 58.008947)
     hardware = HardwareMonitor()
     thr1 = threading.Thread(target=run_applet)
-    thr2 = threading.Thread(target=run_poll_keyboard)
-    thr3 = threading.Thread(target=weather.poller)
-    thr4 = threading.Thread(target=hardware.update_values)
-    # thr3 = threading.Thread(target=run_slideshow)
+    thr2 = threading.Thread(target=read_keys)
+    thr3 = threading.Thread(target=read_menu)
+    thr4 = threading.Thread(target=weather.poller)
+    thr5 = threading.Thread(target=hardware.update_values)
     thr1.start()
     thr2.start()
     thr3.start()
     thr4.start()
+    thr5.start()
+    backlight(display)

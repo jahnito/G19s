@@ -17,7 +17,8 @@ class Display():
         self._ep_in_keyboard = self.create_endpoint_keyboard_in()
         self._ep_in_gkeys = self.create_endpoint_gkeys()
         self.backlight = None
-
+        self.menukey_status = None
+        self.gkey_status = None
         self.last_image = None
 
     @staticmethod
@@ -42,17 +43,15 @@ class Display():
             return dev
 
     def create_intf_display(self) -> usb.Interface:
-        dev = self.create_dev_keyboard()
-        if not dev:
+        if not self._dev_display:
             raise usb.core.USBError('G19s LCD not found on USB')
-        cfg = dev.get_active_configuration()
+        cfg = self._dev_display.get_active_configuration()
         return cfg[(0,0)]
 
     def create_intf_backlight(self) -> usb.Interface:
-        dev = self.create_dev_keyboard()
-        if not dev:
+        if not self._dev_display:
             raise usb.core.USBError('G19s LCD not found on USB')
-        cfg = dev.get_active_configuration()
+        cfg = self._dev_display.get_active_configuration()
         return cfg[(1,0)]
 
     def create_endpoint_display_out(self) -> usb.core.Endpoint:
@@ -108,27 +107,27 @@ class Display():
     def get_menu_keys(self):
         button_id = None
         try:
-            # button_id = self._ep_in_keyboard.read(2, 10000)
-            button_id = self._dev_display.read(0x81, 2, timeout=10000)
-        except usb.core.USBTimeoutError as e:
-            # print(e)
-            return None
-        if button_id and button_id[0] > 0:
+            button_id = self._dev_display.read(0x81, 2, timeout=50)
             return button_id
-        else:
+        except usb.core.USBTimeoutError:
             return None
 
     def get_m_g_keys(self):
         button_id = None
         try:
-            button_id = self._dev_display.read(0x83, 11, timeout=10000)
-        except usb.core.USBTimeoutError as e:
-            # print(e)
-            return None
-        if button_id and (button_id[-2] > 0 or button_id[-3] > 0):
-            if len(button_id) > 4:
-                button_id = button_id[-4:]
+            button_id = self._dev_display.read(0x83, 11, timeout=50)
             return button_id
+        except usb.core.USBTimeoutError:
+            return None
+
+    def poll_keys(self):
+            while True:
+                if gkeys := self.get_m_g_keys():
+                    self.gkey_status = tuple(gkeys)
+                if menu_keys := self.get_menu_keys():
+                    self.menukey_status = tuple(menu_keys)
+                # print(self.gkey_status)
+                # print(self.menukey_status)
 
     @staticmethod
     def convert_image_to_frame(filename):
@@ -184,20 +183,21 @@ class Display():
 class Menu():
     def __init__(self, display: Display):
         self.enabled = 0
-        self.timeout_menu: int = 60 # seconds
-        self.last_key_press = None
         self.display = display
 
-
-    def set_default_action(self, id: int, num_applets: int):
-        if not self.enabled:
-            if id == 16:
-                if self.display.applet < num_applets - 1:
-                    self.display.applet += 1
-            elif id == 32:
-                if self.display.applet > 0:
-                    self.display.applet -= 1
-            print("Current applet", self.display.applet)
+    def keys_action(self, num_applets: int):
+        while True:
+            if not self.enabled:
+                if self.display.menukey_status == (16, 128):
+                    print('right')
+                    if self.display.applet < num_applets - 1:
+                        self.display.applet += 1
+                elif self.display.menukey_status == (32, 128):
+                    print('left')
+                    if self.display.applet > 0:
+                        self.display.applet -= 1
+                print("Current applet", self.display.applet)
+                time.sleep(0.2)
 
 
 class Weather():

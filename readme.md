@@ -51,14 +51,15 @@ Display button press identifiers:
 
 | ID  | Button |
 |---|---|
-| 1 | gear / settings |
-| 2 | back |
-| 4 | menu |
-| 8 | ok |
-| 16 | right arrow |
-| 32 | left arrow |
-| 64 | down arrow |
-| 128 | up arrow |
+| [1, 128] | gear / settings |
+| [2, 128] | back |
+| [4, 128] | menu |
+| [8, 128] | ok |
+| [16, 128] | right arrow |
+| [32, 128] | left arrow |
+| [64, 128] | down arrow |
+| [128, 128] | up arrow |
+| [0, 128] | any button released |
 
 To run the current implementation of the project, you need to run main.py with root rights.
 

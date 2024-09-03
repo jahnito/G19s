@@ -2,43 +2,49 @@ from Classes import Display
 import usb
 import time
 from random import randint, choice
-from Functions import get_gkeys_mkeys
+# from Functions import get_gkeys_mkeys
+from datetime import datetime, timedelta
 
 d = Display()
-# d.reset()
 
-# time.sleep(5)
-# rtype = usb.TYPE_CLASS | usb.RECIP_INTERFACE
 
-# d.reset()
+# def rgb_rnd():
+#     r = randint(0,255)
+#     g = randint(0,255)
+#     b = randint(0,255)
+#     return [r, g, b]
 
-# отцепляем системный дравер с первого интерфейса
-# d._dev_display.detach_kernel_driver(1)
-c = 1
-while True:
-    rngs = [range(randint(0, 256), -1, -1),
-            range(randint(0, 256), randint(0, 256)),
-            range(randint(0, 256), randint(0, 256)),
-            range(randint(0, 256), -1, -1)]
-    for r in choice(rngs):
-        for g in choice(rngs):
-            for b in choice(rngs):
-                d.set_backlight(r, g, b)
-                time.sleep(0.05)
+# r, g, b = rgb_rnd()
+# rx, gx, bx = [1] * 3
+# nxt_restart = datetime.now() + timedelta(seconds=15)
+# while True:
+#     if datetime.now() > nxt_restart:
+#         nxt_restart = datetime.now() + timedelta(seconds=15)
+#         r, g, b = rgb_rnd()
+#     if r == 255:
+#         rx = -1
+#     elif r == 0:
+#         rx = 1
+#     if g == 255:
+#         gx = -1
+#     elif g == 0:
+#         gx = 1
+#     if b == 255:
+#         bx = -1
+#     elif b == 0:
+#         bx = 1
+
+#     r += 1 * rx
+#     g += 1 * gx
+#     b += 1 * bx
+#     print(r,g,b)
+#     d.set_backlight(r, g, b)
+#     time.sleep(0.01)
 
 # d.save_backlight(*d.backlight)
 
+# d.get_menu_keys()
 
-# while True:
-#     try:
-#         res = d._dev_display.read(0x83, 20, 10000)
-#         print(res)
-#         time.sleep(2)
-#     except usb.core.USBError as e:
-#         print(e)
+# d.poll_menu_keys()
 
-
-
-# while True:
-#     print(d.get_m_g_keys())
-#     time.sleep(1)
+# d.poll_keys()

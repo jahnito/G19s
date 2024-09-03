@@ -1,4 +1,4 @@
-from Classes import Display, Menu, Weather, HardwareMonitor
+from Classes import Display, Weather, HardwareMonitor
 from PIL import Image, ImageDraw, ImageFont
 from psutil import cpu_percent, getloadavg, cpu_count, virtual_memory
 from psutil import sensors_temperatures, pids, boot_time
@@ -8,6 +8,7 @@ import math
 import urllib.request
 import urllib.error
 import json
+import random
 from io import BytesIO
 import usb
 
@@ -291,33 +292,39 @@ def show_file_image(path_to_img: str) -> Image.Image:
     return img
 
 
-def get_keystroke(menu: Menu, applets: dict):
-    '''
-    Reads the value of the pressed button
-    and sends it to the Menu class for processing
-    '''
-    button_id = None
-    num_applets = len(applets)
-    try:
-        button_id = menu.display._ep_in_keyboard.read(2, 10000)
-        # back_state = menu.display._ep_in_keyboard.read(2, 100)
-    except usb.core.USBTimeoutError as e:
-        return False
-    if button_id:
-        print(button_id)
-        menu.set_default_action(button_id[0], num_applets)
-        return True
+def backlight(display: Display):
+    def rgb_rnd():
+        r = random.randint(0,255)
+        g = random.randint(0,255)
+        b = random.randint(0,255)
+        return [r, g, b]
 
-def get_gkeys_mkeys(display: Display):
-    # '''
-    # '''
-    res = display._ep_in_gkeys.read(1, 1000)
-    # rtype = usb.TYPE_CLASS | usb.RECIP_INTERFACE
-    # dataBuff = [0x10, 0x0]
-    # res = display._dev_display.ctrl_transfer(rtype, 0x09, 0x305, 0x01, dataBuff, 1000)
-    return res
-    # display._dev_display.i
+    r, g, b = rgb_rnd()
+    rx, gx, bx = [1] * 3
+    nxt_restart = datetime.datetime.now() + datetime.timedelta(seconds=15)
+    while True:
+        if datetime.datetime.now() > nxt_restart:
+            nxt_restart = datetime.datetime.now() + datetime.timedelta(seconds=15)
+            r, g, b = rgb_rnd()
+        if r == 255:
+            rx = -1
+        elif r == 0:
+            rx = 1
+        if g == 255:
+            gx = -1
+        elif g == 0:
+            gx = 1
+        if b == 255:
+            bx = -1
+        elif b == 0:
+            bx = 1
 
+        r += 1 * rx
+        g += 1 * gx
+        b += 1 * bx
+        print(r,g,b)
+        display.set_backlight(r, g, b)
+        time.sleep(0.01)
 
 
 # Applets
