@@ -301,10 +301,10 @@ def backlight(display: Display):
 
     r, g, b = rgb_rnd()
     rx, gx, bx = [1] * 3
-    nxt_restart = datetime.datetime.now() + datetime.timedelta(seconds=15)
+    nxt_restart = datetime.datetime.now() + datetime.timedelta(seconds=25)
     while True:
         if datetime.datetime.now() > nxt_restart:
-            nxt_restart = datetime.datetime.now() + datetime.timedelta(seconds=15)
+            nxt_restart = datetime.datetime.now() + datetime.timedelta(seconds=25)
             r, g, b = rgb_rnd()
         if r == 255:
             rx = -1
@@ -322,9 +322,8 @@ def backlight(display: Display):
         r += 1 * rx
         g += 1 * gx
         b += 1 * bx
-        print(r,g,b)
         display.set_backlight(r, g, b)
-        time.sleep(0.01)
+        time.sleep(0.05)
 
 
 # Applets

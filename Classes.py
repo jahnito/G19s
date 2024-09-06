@@ -196,7 +196,7 @@ class Menu():
                     print('left')
                     if self.display.applet > 0:
                         self.display.applet -= 1
-                print("Current applet", self.display.applet)
+                # print("Current applet", self.display.applet)
                 time.sleep(0.2)
 
 
