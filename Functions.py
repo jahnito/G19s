@@ -253,6 +253,7 @@ def show_clock_image(size=110, center = (160, 120), color_clock='red', color=(0,
     draw.line(coordinates_min, fill=color_clock, width=4)
     draw.line(coordinates_hour, fill=color_clock, width=6)
     draw.circle(center, risk * 0.05, fill=color_clock, outline=color)
+    img.save(f'clock_{min}_{str(sec) if sec > 10 else "0" + str(sec)}.png', 'png')
     return img
 
 
@@ -270,8 +271,10 @@ def get_random_cat():
 
 
 def show_cats_api():
+    '''
+    Returns an image with cats
+    '''
     random_cat = get_random_cat()
-    
     while random_cat[-3:] != 'jpg':
         random_cat = get_random_cat()
     try:
@@ -293,6 +296,9 @@ def show_file_image(path_to_img: str) -> Image.Image:
 
 
 def backlight(display: Display):
+    '''
+    Turns on the keyboard backlight and changes it smoothly.
+    '''
     def rgb_rnd():
         r = random.randint(0,255)
         g = random.randint(0,255)
@@ -301,10 +307,10 @@ def backlight(display: Display):
 
     r, g, b = rgb_rnd()
     rx, gx, bx = [1] * 3
-    nxt_restart = datetime.datetime.now() + datetime.timedelta(seconds=25)
+    nxt_restart = datetime.datetime.now() + datetime.timedelta(seconds=300)
     while True:
         if datetime.datetime.now() > nxt_restart:
-            nxt_restart = datetime.datetime.now() + datetime.timedelta(seconds=25)
+            nxt_restart = datetime.datetime.now() + datetime.timedelta(seconds=300)
             r, g, b = rgb_rnd()
         if r == 255:
             rx = -1
@@ -323,7 +329,7 @@ def backlight(display: Display):
         g += 1 * gx
         b += 1 * bx
         display.set_backlight(r, g, b)
-        time.sleep(0.05)
+        time.sleep(0.02)
 
 
 # Applets

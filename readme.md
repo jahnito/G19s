@@ -1,6 +1,12 @@
 # Logitech G19s Linux support
 
-A set of scripts for working with the Logitech G19s keyboard
+A set of scripts for the G19 and G19s keyboards. Includes an installer that installs into the operating system. Installation requires an Internet connection to download the necessary packages into the virtual environment. The installation must be launched with root rights. Tested on Debian 12.
+
+Planned revision:
+Moving applets to separate classes.
+Creating new applets for the display.
+Creating a menu applet for control from the display buttons.
+Saving settings to the configuration.
 
 
 ## What you need to use this
@@ -21,11 +27,9 @@ Applets have been prepared that display images on the screen:
 
 Time (show_time_image.png)
 
-![show_time_image](show_time_image.png)
+![show_time_image](time.gif)
 
-Time and Weather (show_time_image_with_weather.png)
-
-![show_time_image_with_weather](show_time_image_with_weather.png)
+Displays the current time, CPU and memory load. Filling of mountpoints of individual partitions in the system (the animation shows the mounting of the drive and writing data to it, unmounting). Speed ​​increased.
 
 System monitor (show_hw_monitor_image.png)
 
@@ -35,8 +39,11 @@ Analog clock (clock.gif)
 
 ![show_hw_monitor_image](clock.gif)
 
+Speed ​​increased.
+
 A Menu class has been implemented for working with display keys.
 At the moment, it is possible to switch applets by pressing the right and left arrows.
+When launched, the keyboard backlight turns on and the colors change smoothly.
 
 ## API
 

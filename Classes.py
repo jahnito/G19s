@@ -256,10 +256,10 @@ class Weather():
 class HardwareMonitor():
     '''
     fs: determines what types of file systems on disks to monitor
-    fs_excluded: determines what monitoring mountpoints should be excluded
+    mp_excluded: determines what monitoring mountpoints should be excluded
     '''
     fs = ('ext3', 'ext4', 'fat', 'exfat', 'fat32', 'ntfs')
-    fs_excluded = ('boot', 'var')
+    mp_excluded = ('boot', 'var')
 
     def __init__(self, interval: int = 5):
         self.cpu_count = psutil.cpu_count()
@@ -270,7 +270,7 @@ class HardwareMonitor():
         self.temp_sensors = psutil.sensors_temperatures()
         self.disks = tuple(i for i in psutil.disk_partitions() \
                            if i.fstype in self.fs and \
-                           i.mountpoint.split('/')[-1] not in self.fs_excluded)
+                           i.mountpoint.split('/')[-1] not in self.mp_excluded)
         self.disks_usage = {disk.mountpoint: psutil.disk_usage(disk.mountpoint) for disk in self.disks}
 
         self.sys_started = psutil.boot_time()
@@ -288,5 +288,5 @@ class HardwareMonitor():
             self.temp_sensors = psutil.sensors_temperatures()
             self.disks = tuple(i for i in psutil.disk_partitions() \
                             if i.fstype in self.fs and \
-                            i.mountpoint.split('/')[-1] not in self.fs_excluded)
+                            i.mountpoint.split('/')[-1] not in self.mp_excluded)
             self.disks_usage = {disk.mountpoint: psutil.disk_usage(disk.mountpoint) for disk in self.disks}
