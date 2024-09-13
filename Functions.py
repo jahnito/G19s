@@ -253,7 +253,6 @@ def show_clock_image(size=110, center = (160, 120), color_clock='red', color=(0,
     draw.line(coordinates_min, fill=color_clock, width=4)
     draw.line(coordinates_hour, fill=color_clock, width=6)
     draw.circle(center, risk * 0.05, fill=color_clock, outline=color)
-    img.save(f'clock_{min}_{str(sec) if sec > 10 else "0" + str(sec)}.png', 'png')
     return img
 
 
