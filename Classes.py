@@ -5,6 +5,10 @@ import urllib.request, urllib.error, json
 import datetime, time
 from PIL import Image
 import psutil
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class Display():
@@ -29,15 +33,18 @@ class Display():
                 dev.detach_kernel_driver(0)
                 dev.reset()
             except usb.core.USBError as e:
-                print(e)
+                logger.warning(e)
+                # print(e)
         if dev.is_kernel_driver_active(1):
             try:
                 dev.detach_kernel_driver(1)
                 dev.reset()
             except usb.core.USBError as e:
-                print(e)
+                # print(e)
+                logger.warning(e)
         if dev is None:
-            print('G19s LCD not found on USB bus')
+            logger.error('G19s LCD not found on USB bus')
+            # print('G19s LCD not found on USB bus')
             raise usb.core.USBError
         else:
             return dev
@@ -189,11 +196,13 @@ class Menu():
         while True:
             if not self.enabled:
                 if self.display.menukey_status == (16, 128):
-                    print('right')
+                    logger.debug('right')
+                    # print()
                     if self.display.applet < num_applets - 1:
                         self.display.applet += 1
                 elif self.display.menukey_status == (32, 128):
-                    print('left')
+                    logger.debug('left')
+                    # print('')
                     if self.display.applet > 0:
                         self.display.applet -= 1
                 # print("Current applet", self.display.applet)
@@ -249,7 +258,8 @@ class Weather():
                 data = json.loads(u.read().decode('utf-8'))
             return data
         except (urllib.error.URLError, ConnectionResetError) as e:
-            print(e, datetime.datetime.now().strftime('%H:%M %d-%m-%Y'))
+            logging.error(e)
+            # print(e, datetime.datetime.now().strftime('%H:%M %d-%m-%Y'))
             return None
 
 

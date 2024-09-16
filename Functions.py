@@ -11,6 +11,10 @@ import json
 import random
 from io import BytesIO
 import usb
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 def show_hw_monitor_image(color=(0, 0, 0),
@@ -253,6 +257,10 @@ def show_clock_image(size=110, center = (160, 120), color_clock='red', color=(0,
     draw.line(coordinates_min, fill=color_clock, width=4)
     draw.line(coordinates_hour, fill=color_clock, width=6)
     draw.circle(center, risk * 0.05, fill=color_clock, outline=color)
+    if sec % 2:
+        logger.debug('tik')
+    else:
+        logger.debug('tok')
     return img
 
 
@@ -263,9 +271,11 @@ def get_random_cat():
     try:
         with urllib.request.urlopen(url) as u:
             data = json.loads(u.read().decode('utf-8'))
+            logger.debug('Load random image from thecatapi')
         return data[0]['url']
     except urllib.error.HTTPError as e:
-        print(e)
+        logger.warning(e)
+        # print(e)
         return 'error_load_image'
 
 
@@ -281,9 +291,11 @@ def show_cats_api():
         with urllib.request.urlopen(request) as c:
             data = c.read()
             img = Image.open(BytesIO(data))
+        logger.info('Change cat image')
         return img
     except urllib.error.HTTPError as e:
-        print(e)
+        logger.warning(e)
+        # print(e)
 
 
 def show_file_image(path_to_img: str) -> Image.Image:

@@ -2,6 +2,13 @@ from Classes import Display, Menu, Weather, HardwareMonitor
 from Functions import applet_hw, applet_time, applet_clock, applet_cats
 from Functions import backlight
 import threading
+import logging.config
+import logging
+from Logging import logging_config
+
+
+logging.config.dictConfig(logging_config)
+logger = logging.getLogger(__name__)
 
 
 active_applets = {
@@ -20,7 +27,7 @@ def run_applet():
             else:
                 active_applets[display.applet](display, active_applets)
         except ValueError:
-            print('Unknown error')
+            logging.error()
 
 
 def read_keys():
