@@ -122,3 +122,38 @@ To run the current implementation of the project, you need to run main.py with r
 | MR ||
 | button pressed | [2, 0, 128, 64]|
 | button released | [2, 0, 0, 64]|
+
+
+## Working with USB without escalating privileges
+
+to work with devices, you need to increase your privileges, during the development process, in order not to switch to root, there is the ability to configure the udev rules. First, add the rules:
+
+sudo nano /etc/udev/rules.d/80-logitech.rules
+
+```
+SUBSYSTEMS=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c229", GROUP="plugdev", MODE="0666"
+SUBSYSTEMS=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c228", GROUP="plugdev", MODE="0666"
+```
+
+restart the rules:
+
+sudo udevadm control --reload
+sudo udevadm trigger
+
+check the operation of the rules:
+
+lsusb
+
+Bus 001 Device 005: ID 046d:c229 Logitech, Inc. G19 Gaming Keyboard Macro Interface
+Bus 001 Device 004: ID 046d:c228 Logitech, Inc. G19 Gaming Keyboard
+
+
+sudo ls /dev/bus/usb/001/005 -lha
+
+crw-rw-rw- 1 root plugdev 189, 4 Jan  2 22:53 /dev/bus/usb/001/005
+
+sudo usermod -aG plugdev jahn
+
+after which you can launch the program without increasing your privileges:
+
+python3 main.py
